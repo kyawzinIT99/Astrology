@@ -1,0 +1,46 @@
+[
+  {
+    "booking_id": "BK-20260222-A5DF7E",
+    "name": "test one ",
+    "phone": "0949567820",
+    "date": "2026-02-27",
+    "time": "10:00",
+    "topic": "general",
+    "note": "love ",
+    "status": "confirmed",
+    "created_at": "2026-02-22T23:19:14.124189"
+  },
+  {
+    "booking_id": "BK-20260222-4CE017",
+    "name": "Test Sync User",
+    "phone": "09111222333",
+    "date": "2026-02-27",
+    "time": "11:00",
+    "topic": "general",
+    "note": "",
+    "status": "pending",
+    "created_at": "2026-02-22T22:49:47.665230"
+  },
+  {
+    "booking_id": "BK-20260222-579A43",
+    "name": "Su Mon Myint Oo",
+    "phone": "09495678200",
+    "date": "2026-02-25",
+    "time": "10:00",
+    "topic": "",
+    "note": "",
+    "status": "confirmed",
+    "created_at": "2026-02-22T22:29:25.701327"
+  },
+  {
+    "booking_id": "BK-20260222-AB7C84",
+    "name": "Kyaw Zin",
+    "phone": "09123456789",
+    "date": "2026-02-23",
+    "time": "14:00",
+    "topic": "general",
+    "note": "",
+    "status": "pending",
+    "created_at": "2026-02-22T22:17:21.276759"
+  }
+]

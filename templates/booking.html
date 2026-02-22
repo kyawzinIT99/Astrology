@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="my">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ရက်ချိန်း ယူရန် | Su Mon Myint Oo Tarot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-deep: #0a0118;
+            --bg-surface: #110827;
+            --bg-card: rgba(26, 10, 58, 0.65);
+            --border-subtle: rgba(139, 92, 246, 0.15);
+            --border-glow: rgba(139, 92, 246, 0.4);
+            --accent-primary: #8b5cf6;
+            --accent-secondary: #a78bfa;
+            --accent-gold: #fbbf24;
+            --accent-pink: #ec4899;
+            --accent-teal: #2dd4bf;
+            --text-primary: #f1f0fb;
+            --text-secondary: #a5a0c8;
+            --text-muted: #6b639e;
+            --radius: 16px;
+        }
+
+        html,
+        body {
+            min-height: 100vh;
+            font-family: 'Padauk', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+        }
+
+        /* Stars */
+        .stars-container {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) ease-in-out infinite;
+            opacity: 0;
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            50% {
+                opacity: var(--max-opacity);
+                transform: scale(1);
+            }
+        }
+
+        .page-container {
+            position: relative;
+            z-index: 1;
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        /* Header */
+        .page-header {
+            text-align: center;
+            padding: 32px 0 24px;
+        }
+
+        .page-header .icon {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .page-header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+        }
+
+        .card h2 {
+            font-size: 16px;
+            color: var(--accent-secondary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            background: rgba(30, 15, 60, 0.8);
+            color: var(--text-primary);
+            font-family: 'Padauk', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 28px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-pink));
+            color: white;
+            font-family: 'Padauk', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            text-decoration: none;
+            margin-bottom: 16px;
+            transition: color 0.2s;
+        }
+
+        .btn-back:hover {
+            color: var(--accent-primary);
+        }
+
+        /* Success message */
+        .success-card {
+            text-align: center;
+            padding: 40px 24px;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-card .check {
+            font-size: 64px;
+            display: block;
+            margin-bottom: 16px;
+        }
+
+        .success-card h2 {
+            color: var(--accent-teal);
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .success-card p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .booking-ref {
+            color: var(--accent-gold);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        /* Existing bookings */
+        .booking-item {
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .booking-item .info h3 {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .booking-item .info p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .booking-item .status {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+        }
+
+        .status-pending {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--accent-gold);
+        }
+
+        .status-confirmed {
+            background: rgba(45, 212, 191, 0.15);
+            color: var(--accent-teal);
+        }
+
+        .status-completed {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .time-slot {
+            padding: 8px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: 'Padauk', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .time-slot:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .time-slot.selected {
+            border-color: var(--accent-primary);
+            background: rgba(139, 92, 246, 0.2);
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .powered-by {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 20px 0;
+        }
+
+        /* ── Responsive ──────────────────────────────────────────── */
+        @media (max-width: 600px) {
+            .page-container {
+                padding: 16px 12px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            .time-slots {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .booking-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .booking-item .status {
+                align-self: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="stars-container" id="starsContainer"></div>
+
+    <div class="page-container">
+        <a href="/" class="btn-back">← Chat သို့ ပြန်သွားရန်</a>
+
+        <div class="page-header">
+            <span class="icon">📅</span>
+            <h1>Tarot ရက်ချိန်း ယူရန်</h1>
+            <p>Su Mon Myint Oo နှင့် ဗေဒင် ရက်ချိန်း စီစဉ်ရန်</p>
+        </div>
+
+        <!-- Booking Form -->
+        <div class="card" id="bookingFormCard">
+            <h2>📝 ရက်ချိန်းအသစ် ယူရန်</h2>
+            <form id="bookingForm" onsubmit="submitBooking(event)">
+                <div class="form-group">
+                    <label>အမည် *</label>
+                    <input type="text" id="bookName" required placeholder="သင့်အမည် ရိုက်ထည့်ပါ">
+                </div>
+                <div class="form-group">
+                    <label>ဖုန်းနံပါတ် *</label>
+                    <input type="tel" id="bookPhone" required placeholder="09xxxxxxxxx">
+                </div>
+                <div class="form-group">
+                    <label>ရက်စွဲ ရွေးချယ်ပါ *</label>
+                    <input type="date" id="bookDate" required>
+                </div>
+                <div class="form-group">
+                    <label>အချိန် ရွေးချယ်ပါ *</label>
+                    <div class="time-slots" id="timeSlots">
+                        <button type="button" class="time-slot" onclick="selectTime(this, '09:00')">09:00 AM</button>
+                        <button type="button" class="time-slot" onclick="selectTime(this, '10:00')">10:00 AM</button>
+                        <button type="button" class="time-slot" onclick="selectTime(this, '11:00')">11:00 AM</button>
+                        <button type="button" class="time-slot" onclick="selectTime(this, '13:00')">01:00 PM</button>
+                        <button type="button" class="time-slot" onclick="selectTime(this, '14:00')">02:00 PM</button>
+                        <button type="button" class="time-slot" onclick="selectTime(this, '15:00')">03:00 PM</button>
+                        <button type="button" class="time-slot" onclick="selectTime(this, '16:00')">04:00 PM</button>
+                        <button type="button" class="time-slot" onclick="selectTime(this, '17:00')">05:00 PM</button>
+                        <button type="button" class="time-slot" onclick="selectTime(this, '18:00')">06:00 PM</button>
+                    </div>
+                    <input type="hidden" id="bookTime" required>
+                </div>
+                <div class="form-group">
+                    <label>အကြောင်းအရာ (ရွေးချယ်ပါ)</label>
+                    <select id="bookTopic">
+                        <option value="general">အထွေထွေ ဗေဒင်</option>
+                        <option value="love">အချစ်ရေး</option>
+                        <option value="career">အလုပ်အကိုင်</option>
+                        <option value="finance">ငွေကြေးရေးရာ</option>
+                        <option value="health">ကျန်းမာရေး</option>
+                        <option value="family">မိသားစု</option>
+                        <option value="tarot">Tarot Card Reading</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>မှတ်ချက် (မလိုအပ်ပါ)</label>
+                    <textarea id="bookNote" placeholder="ထပ်မံ ပြောကြားလိုသည်များ..."></textarea>
+                </div>
+                <button type="submit" class="btn-submit" id="btnSubmit">📅 ရက်ချိန်း အတည်ပြုရန်</button>
+            </form>
+        </div>
+
+        <!-- Success Card (hidden) -->
+        <div class="card success-card" id="successCard" style="display: none;">
+            <span class="check">✅</span>
+            <h2>ရက်ချိန်း အောင်မြင်စွာ ယူပြီးပါပြီ!</h2>
+            <p>
+                ရက်ချိန်း ရည်ညွှန်းအမှတ်:<br>
+                <span class="booking-ref" id="bookingRef"></span>
+            </p>
+            <p style="margin-top: 16px;">
+                Su Mon Myint Oo မှ အတည်ပြုပြီးပါက ဖုန်းဖြင့်<br>
+                ဆက်သွယ်ပေးပါမည်။ 📞
+            </p>
+            <br>
+            <a href="/" class="btn-back" style="justify-content: center;">← Chat သို့ ပြန်သွားရန်</a>
+        </div>
+
+        <!-- My Bookings -->
+        <div class="card" id="myBookingsCard">
+            <h2>📋 ရက်ချိန်း မှတ်တမ်း</h2>
+            <div id="bookingsList">
+                <div class="empty-state">ရက်ချိန်း မရှိသေးပါ။</div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        let selectedTime = '';
+
+        // Stars
+        (function () {
+            const c = document.getElementById('starsContainer');
+            for (let i = 0; i < 60; i++) {
+                const s = document.createElement('div'); s.className = 'star';
+                s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 100 + '%';
+                s.style.setProperty('--duration', (2 + Math.random() * 4) + 's');
+                s.style.setProperty('--max-opacity', (0.3 + Math.random() * 0.7).toString());
+                s.style.animationDelay = Math.random() * 4 + 's';
+                s.style.width = (1 + Math.random() * 2) + 'px'; s.style.height = s.style.width;
+                c.appendChild(s);
+            }
+        })();
+
+        // Set min date to today
+        document.getElementById('bookDate').min = new Date().toISOString().split('T')[0];
+
+        function selectTime(el, time) {
+            document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedTime = time;
+            document.getElementById('bookTime').value = time;
+        }
+
+        async function submitBooking(e) {
+            e.preventDefault();
+            if (!selectedTime) {
+                alert('ကျေးဇူးပြု၍ အချိန် ရွေးချယ်ပါ။');
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmit');
+            btn.disabled = true;
+            btn.textContent = '⏳ စောင့်ပါ...';
+
+            const data = {
+                name: document.getElementById('bookName').value,
+                phone: document.getElementById('bookPhone').value,
+                date: document.getElementById('bookDate').value,
+                time: selectedTime,
+                topic: document.getElementById('bookTopic').value,
+                note: document.getElementById('bookNote').value
+            };
+
+            try {
+                const res = await fetch('/api/bookings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+
+                if (res.ok) {
+                    document.getElementById('bookingFormCard').style.display = 'none';
+                    document.getElementById('successCard').style.display = 'block';
+                    document.getElementById('bookingRef').textContent = result.booking_id;
+                    loadBookings();
+                } else {
+                    alert(result.error || 'ရက်ချိန်း ယူရာတွင် အမှားရှိပါသည်။');
+                    btn.disabled = false;
+                    btn.textContent = '📅 ရက်ချိန်း အတည်ပြုရန်';
+                }
+            } catch (err) {
+                alert('ဆာဗာနှင့် ချိတ်ဆက်၍ မရပါ။');
+                btn.disabled = false;
+                btn.textContent = '📅 ရက်ချိန်း အတည်ပြုရန်';
+            }
+        }
+
+        async function loadBookings() {
+            try {
+                const res = await fetch('/api/bookings');
+                const data = await res.json();
+                const list = document.getElementById('bookingsList');
+
+                if (data.bookings && data.bookings.length > 0) {
+                    list.innerHTML = data.bookings.map(b => {
+                        const statusClass = b.status === 'confirmed' ? 'status-confirmed' :
+                            b.status === 'completed' ? 'status-completed' : 'status-pending';
+                        const statusText = b.status === 'confirmed' ? 'အတည်ပြုပြီး' :
+                            b.status === 'completed' ? 'ပြီးဆုံးပြီး' : 'စောင့်ဆိုင်းနေဆဲ';
+                        const topics = {
+                            general: 'အထွေထွေ', love: 'အချစ်ရေး', career: 'အလုပ်အကိုင်',
+                            finance: 'ငွေကြေးရေးရာ', health: 'ကျန်းမာရေး', family: 'မိသားစု',
+                            tarot: 'Tarot Card'
+                        };
+                        return `
+                            <div class="booking-item">
+                                <div class="info">
+                                    <h3>${b.name} — ${topics[b.topic] || b.topic}</h3>
+                                    <p>📅 ${b.date} | ⏰ ${b.time} | 📞 ${b.phone}</p>
+                                </div>
+                                <span class="status ${statusClass}">${statusText}</span>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    list.innerHTML = '<div class="empty-state">ရက်ချိန်း မရှိသေးပါ။</div>';
+                }
+            } catch (e) { }
+        }
+
+        // Load existing bookings on page load
+        loadBookings();
+    </script>
+</body>
+
+</html>

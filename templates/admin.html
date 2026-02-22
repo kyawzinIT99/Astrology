@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="my">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Su Mon Myint Oo Tarot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-deep: #0a0118;
+            --bg-surface: #110827;
+            --bg-card: rgba(26, 10, 58, 0.65);
+            --border-subtle: rgba(139, 92, 246, 0.15);
+            --accent-primary: #8b5cf6;
+            --accent-secondary: #a78bfa;
+            --accent-gold: #fbbf24;
+            --accent-teal: #2dd4bf;
+            --accent-red: #ef4444;
+            --accent-green: #22c55e;
+            --text-primary: #f1f0fb;
+            --text-secondary: #a5a0c8;
+            --text-muted: #6b639e;
+            --radius: 16px;
+        }
+
+        html,
+        body {
+            min-height: 100vh;
+            font-family: 'Padauk', system-ui, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+        }
+
+        .stars-container {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) ease-in-out infinite;
+            opacity: 0;
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: 0;
+            }
+
+            50% {
+                opacity: var(--max-opacity);
+            }
+        }
+
+        .page {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 24px 0;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            font-size: 13px;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-primary);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+        }
+
+        .stat-card .num {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .stat-card .label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .stat-pending .num {
+            color: var(--accent-gold);
+        }
+
+        .stat-confirmed .num {
+            color: var(--accent-teal);
+        }
+
+        .stat-total .num {
+            color: var(--accent-secondary);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(20px);
+        }
+
+        .card h2 {
+            font-size: 15px;
+            color: var(--accent-secondary);
+            margin-bottom: 14px;
+        }
+
+        .booking-row {
+            background: rgba(139, 92, 246, 0.06);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+        }
+
+        .booking-row .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .booking-row .name {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .booking-row .meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .booking-row .actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 7px 14px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Padauk', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-confirm {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-confirm:hover {
+            background: rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-reject {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-reject:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-sms {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-secondary);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-sms:hover {
+            background: rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-sheets {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--accent-gold);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .btn-sheets:hover {
+            background: rgba(251, 191, 36, 0.3);
+        }
+
+        .badge {
+            font-size: 10px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+        }
+
+        .badge-pending {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--accent-gold);
+        }
+
+        .badge-confirmed {
+            background: rgba(45, 212, 191, 0.15);
+            color: var(--accent-teal);
+        }
+
+        .badge-rejected {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red);
+        }
+
+        .empty {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .filter-btns {
+            display: flex;
+            gap: 6px;
+        }
+
+        .filter-btn {
+            padding: 5px 12px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Padauk', sans-serif;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        /* ── Responsive ──────────────────────────────────────────── */
+        @media (max-width: 600px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-btns {
+                flex-wrap: wrap;
+            }
+
+            .booking-row .top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .booking-row .actions {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="stars-container" id="starsContainer"></div>
+    <div class="page">
+        <div class="nav-links">
+            <a href="/">← Chat</a>
+            <a href="/booking">📅 Booking</a>
+        </div>
+
+        <div class="header">
+            <h1>🔮 Admin Dashboard</h1>
+            <p>ရက်ချိန်း စီမံခန့်ခွဲရန်</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card stat-pending">
+                <div class="num" id="pendingCount">0</div>
+                <div class="label">စောင့်ဆိုင်းနေဆဲ</div>
+            </div>
+            <div class="stat-card stat-confirmed">
+                <div class="num" id="confirmedCount">0</div>
+                <div class="label">အတည်ပြုပြီး</div>
+            </div>
+            <div class="stat-card stat-total">
+                <div class="num" id="totalCount">0</div>
+                <div class="label">စုစုပေါင်း</div>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <div class="filter-btns">
+                <button class="filter-btn active" onclick="filterBookings('all', this)">အားလုံး</button>
+                <button class="filter-btn" onclick="filterBookings('pending', this)">စောင့်ဆိုင်းနေဆဲ</button>
+                <button class="filter-btn" onclick="filterBookings('confirmed', this)">အတည်ပြုပြီး</button>
+                <button class="filter-btn" onclick="filterBookings('rejected', this)">ပယ်ချပြီး</button>
+            </div>
+            <div style="display:flex; gap: 8px;">
+                <span style="color: var(--text-muted); font-size: 11px; padding: 5px 0;">n8n ↔ Sheets + SMS</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="bookingsList">
+                <div class="empty">ရက်ချိန်း မရှိသေးပါ</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allBookings = [];
+        let currentFilter = 'all';
+
+        // Stars
+        (function () {
+            const c = document.getElementById('starsContainer');
+            for (let i = 0; i < 40; i++) {
+                const s = document.createElement('div'); s.className = 'star';
+                s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 100 + '%';
+                s.style.setProperty('--duration', (2 + Math.random() * 4) + 's');
+                s.style.setProperty('--max-opacity', (0.3 + Math.random() * 0.7).toString());
+                s.style.animationDelay = Math.random() * 4 + 's';
+                c.appendChild(s);
+            }
+        })();
+
+        async function loadBookings() {
+            try {
+                const res = await fetch('/api/bookings');
+                const data = await res.json();
+                allBookings = data.bookings || [];
+                updateStats();
+                renderBookings();
+            } catch (e) { }
+        }
+
+        function updateStats() {
+            const pending = allBookings.filter(b => b.status === 'pending').length;
+            const confirmed = allBookings.filter(b => b.status === 'confirmed').length;
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('confirmedCount').textContent = confirmed;
+            document.getElementById('totalCount').textContent = allBookings.length;
+        }
+
+        function filterBookings(status, btn) {
+            currentFilter = status;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderBookings();
+        }
+
+        function renderBookings() {
+            const list = document.getElementById('bookingsList');
+            const filtered = currentFilter === 'all' ? allBookings : allBookings.filter(b => b.status === currentFilter);
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="empty">ရက်ချိန်း မရှိသေးပါ</div>';
+                return;
+            }
+
+            const topics = {
+                general: 'အထွေထွေ', love: 'အချစ်ရေး', career: 'အလုပ်အကိုင်',
+                finance: 'ငွေကြေး', health: 'ကျန်းမာရေး', family: 'မိသားစု', tarot: 'Tarot'
+            };
+
+            list.innerHTML = filtered.map(b => {
+                const badgeClass = b.status === 'confirmed' ? 'badge-confirmed' :
+                    b.status === 'rejected' ? 'badge-rejected' : 'badge-pending';
+                const badgeText = b.status === 'confirmed' ? 'အတည်ပြုပြီး' :
+                    b.status === 'rejected' ? 'ပယ်ချပြီး' : 'စောင့်ဆိုင်းနေဆဲ';
+                const topic = topics[b.topic] || b.topic || 'အထွေထွေ';
+
+                // SMS messages
+                const confirmMsg = encodeURIComponent(
+                    `မင်္ဂလာပါ ${b.name}။ Su Mon Myint Oo မဟာဘုတ် ဗေဒင်(Tarot) မှ အကြောင်းကြားပါသည်။ သင့်ရက်ချိန်း ${b.date} ရက် ${b.time} အချိန်တွင် အတည်ပြုပြီးပါပြီ။ ကျေးဇူးတင်ပါသည်။ 🔮`
+                );
+                const rejectMsg = encodeURIComponent(
+                    `မင်္ဂလာပါ ${b.name}။ Su Mon Myint Oo မဟာဘုတ် ဗေဒင်(Tarot) မှ အကြောင်းကြားပါသည်။ သင့်ရက်ချိန်း ${b.date} ရက် ${b.time} အချိန်ကို ပယ်ဖျက်ရပါသည်။ အခြားရက် ပြန်လည်ယူပါ။ 🙏`
+                );
+
+                const isPending = b.status === 'pending';
+
+                return `
+                    <div class="booking-row" id="row-${b.booking_id}">
+                        <div class="top">
+                            <div>
+                                <span class="name">${b.name}</span>
+                                <span style="color: var(--text-muted); font-size: 12px; margin-left: 8px;">${topic}</span>
+                            </div>
+                            <span class="badge ${badgeClass}">${badgeText}</span>
+                        </div>
+                        <div class="meta">
+                            📅 ${b.date} &nbsp;|&nbsp; ⏰ ${b.time} &nbsp;|&nbsp; 📞 ${b.phone}
+                            ${b.booking_id ? '&nbsp;|&nbsp; 🔖 ' + b.booking_id : ''}
+                        </div>
+                        <div class="actions">
+                            ${isPending ? `
+                                <a href="sms:${b.phone}?body=${confirmMsg}" class="btn btn-confirm" onclick="updateStatus('${b.booking_id}', 'confirmed')">✅ အတည်ပြု SMS</a>
+                                <a href="sms:${b.phone}?body=${rejectMsg}" class="btn btn-reject" onclick="updateStatus('${b.booking_id}', 'rejected')">❌ ပယ်ချ SMS</a>
+                            ` : `
+                                <a href="sms:${b.phone}" class="btn btn-sms">💬 SMS ပို့ရန်</a>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function updateStatus(bookingId, newStatus) {
+            try {
+                await fetch('/api/bookings/status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ booking_id: bookingId, status: newStatus })
+                });
+                // Update local data
+                const b = allBookings.find(x => x.booking_id === bookingId);
+                if (b) b.status = newStatus;
+                updateStats();
+                renderBookings();
+            } catch (e) { }
+        }
+
+        loadBookings();
+    </script>
+</body>
+
+</html>

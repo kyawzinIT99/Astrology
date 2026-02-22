@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="my">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Su Mon Myint Oo မဟာဘုတ် ဗေဒင်(Tarot)</title>
+    <meta name="description" content="Su Mon Myint Oo မဟာဘုတ် ဗေဒင်(Tarot) - Powered by itsolutions.mm">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <!-- Animated stars background -->
+    <div class="stars-container" id="starsContainer"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-glow"></div>
+            <div class="header-content">
+                <div class="logo-area">
+                    <span class="logo-icon">🔮</span>
+                    <div class="logo-text">
+                        <h1>Su Mon Myint Oo မဟာဘုတ် ဗေဒင်(Tarot)</h1>
+                        <p>Powered by itsolutions.mm | 0949567820</p>
+                    </div>
+                </div>
+                <button class="btn-new-chat" onclick="resetChat()" title="စတင် Chat အသစ်">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12h14" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Chat Messages Area -->
+        <main class="chat-area" id="chatArea">
+            <div class="chat-messages" id="chatMessages">
+                <!-- Messages injected here -->
+            </div>
+        </main>
+
+        <!-- Input Area -->
+        <footer class="input-area">
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <input type="text" id="userInput" placeholder="မက်ဆေ့ချ် ရိုက်ထည့်ပါ..." autocomplete="off"
+                        autofocus>
+                    <button class="btn-send" id="btnSend" onclick="sendMessage()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M22 2L11 13" />
+                            <path d="M22 2L15 22 11 13 2 9 22 2Z" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="input-hint" id="inputHint"></div>
+            </div>
+            <!-- Removed PDF download area as requested -->
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+
+</html>
