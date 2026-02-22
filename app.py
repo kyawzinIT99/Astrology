@@ -25,21 +25,65 @@ engine = MahaboteEngine()
 sessions = {}
 
 # Bookings storage (JSON file)
-BOOKINGS_FILE = os.path.join(os.path.dirname(__file__), "bookings.json")
+# Use Modal persistent Volum if /data exists, otherwise use local dir
+if os.path.exists("/data"):
+    BOOKINGS_FILE = "/data/bookings.json"
+else:
+    BOOKINGS_FILE = os.path.join(os.path.dirname(__file__), "bookings.json")
 
+
+import fcntl
+import tempfile
 
 def load_bookings():
-    """Load bookings from JSON file."""
-    if os.path.exists(BOOKINGS_FILE):
+    """Load bookings from JSON file with file locking."""
+    if not os.path.exists(BOOKINGS_FILE):
+        return []
+    try:
         with open(BOOKINGS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
-
+            fcntl.flock(f, fcntl.LOCK_SH)
+            try:
+                data = f.read()
+                if not data.strip():
+                    return []
+                return json.loads(data)
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)
+    except Exception as e:
+        print(f"Error reading bookings.json: {e}")
+        return []
 
 def save_bookings(bookings):
-    """Save bookings to JSON file."""
-    with open(BOOKINGS_FILE, "w", encoding="utf-8") as f:
-        json.dump(bookings, f, ensure_ascii=False, indent=2)
+    """Save bookings to JSON file atomically."""
+    temp_fd, temp_path = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(BOOKINGS_FILE)), text=True)
+    try:
+        with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
+            json.dump(bookings, f, ensure_ascii=False, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temp_path, BOOKINGS_FILE)
+    except Exception as e:
+        print(f"Error saving bookings.json: {e}")
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+import threading
+
+db_lock = threading.Lock()
+
+def _update_bookings(modifier_func):
+    """
+    Safely update bookings using an exclusive thread lock.
+    The modifier_func should take the bookings list and return (new_bookings_list, return_value).
+    If new_bookings_list is None, nothing gets saved.
+    """
+    with db_lock:
+        bookings = load_bookings()
+        updated_bookings, ret_val = modifier_func(bookings)
+        if updated_bookings is not None:
+            save_bookings(updated_bookings)
+        return ret_val
 
 
 def get_session_data():
@@ -123,24 +167,21 @@ def update_booking_status():
     if not booking_id or new_status not in ("confirmed", "rejected", "pending"):
         return jsonify({"error": "Invalid booking_id or status"}), 400
 
-    bookings = load_bookings()
-    found = False
-    for b in bookings:
-        if b["booking_id"] == booking_id:
-            b["status"] = new_status
-            found = True
-            break
+    def modify_status(bookings_list):
+        for b in bookings_list:
+            if b["booking_id"] == booking_id:
+                b["status"] = new_status
+                return bookings_list, b
+        return None, None
 
-    if not found:
+    updated_booking = _update_bookings(modify_status)
+
+    if not updated_booking:
         return jsonify({"error": "Booking not found"}), 404
 
-    save_bookings(bookings)
-
     # Send status update to n8n → SMS + Sheets
-    booking = next((x for x in bookings if x["booking_id"] == booking_id), None)
     try:
-        if booking:
-            sync_status_update(booking, new_status)
+        sync_status_update(updated_booking, new_status)
     except Exception as e:
         print(f"⚠️ n8n sync failed: {e}")
 
@@ -151,6 +192,24 @@ def get_bookings():
     """Return all bookings."""
     bookings = load_bookings()
     return jsonify({"bookings": bookings})
+
+
+@app.route("/api/bookings/<booking_id>", methods=["DELETE"])
+def delete_booking(booking_id):
+    """Delete a booking."""
+    def remove_booking(bookings_list):
+        initial_len = len(bookings_list)
+        bookings_list = [b for b in bookings_list if b["booking_id"] != booking_id]
+        if len(bookings_list) == initial_len:
+            return None, False
+        return bookings_list, True
+
+    deleted = _update_bookings(remove_booking)
+
+    if not deleted:
+        return jsonify({"error": "Booking not found"}), 404
+
+    return jsonify({"message": f"Booking {booking_id} deleted"}), 200
 
 
 @app.route("/api/bookings", methods=["POST"])
@@ -178,9 +237,11 @@ def create_booking():
         "created_at": datetime.now().isoformat(),
     }
 
-    bookings = load_bookings()
-    bookings.insert(0, booking)  # newest first
-    save_bookings(bookings)
+    def add_booking(bookings_list):
+        bookings_list.insert(0, booking)  # newest first
+        return bookings_list, True
+
+    _update_bookings(add_booking)
 
     # Send to n8n → Google Sheets
     try:
@@ -193,30 +254,31 @@ def create_booking():
 
 
 
+# ── Tarot vs Mahabote Promotion (40,000 MMK) ─────────────────
+PROMO_MSG = (
+    "\n═══════════════════════════════════\n"
+    "🔮 **Tarot vs မဟာဘုတ် — ဘာကွာလဲ?**\n"
+    "═══════════════════════════════════\n\n"
+    "📖 **မဟာဘုတ် ဗေဒင်** (အခမဲ့ — ယခု ရရှိပြီး)\n"
+    "• မွေးနေ့ အခြေပြု ယေဘူယျ ဟောကိန်းများ\n"
+    "• ၆ လ ခန့်မှန်းခြင်း (အထွေထွေ)\n"
+    "• ကံကြမ္မာ လမ်းကြောင်း အကြမ်းဖျင်း\n\n"
+    "🃏 **Tarot ကတ် ဖတ်ခြင်း** (40,000 ကျပ်)\n"
+    "• သင့်ဘဝ အခြေအနေ တိတိပပ ဖတ်ခြင်း\n"
+    "• အချစ်ရေး၊ အလုပ်၊ ငွေကြေး → တိကျသော အဖြေများ\n"
+    "• ရှောင်ရန်/လုပ်ရန် အသေးစိတ် လမ်းညွှန်ချက်\n"
+    "• Su Mon Myint Oo နှင့် တိုက်ရိုက် ဆွေးနွေး\n\n"
+    "💰 **အထူးစျေးနှုန်း: ၄၀,၀၀၀ ကျပ် (KPay ဖြင့် ပေးချေနိုင်ပါသည်)** 💰\n\n"
+    "🎯 မဟာဘုတ်က ကံကြမ္မာ လမ်းကြောင်းကို ပြပါတယ်...\n"
+    "🃏 Tarot က **ဘယ်လို ရွေးချယ်ရမလဲ** ကို ပြပါတယ်!\n\n"
+    "📅 ရက်ချိန်း ယူရန် → `ရက်ချိန်း` ဟု ရိုက်ထည့်ပါ\n"
+    "👉 သို့ [ရက်ချိန်း ယူရန်](/booking)"
+)
+
+
 def process_message(sess: dict, user_msg: str) -> str:
     """State machine for processing chat messages."""
     state = sess["state"]
-
-    # ── Tarot vs Mahabote Promotion (40,000 MMK) ─────────────────
-    PROMO_MSG = (
-        "\n═══════════════════════════════════\n"
-        "🔮 **Tarot vs မဟာဘုတ် — ဘာကွာလဲ?**\n"
-        "═══════════════════════════════════\n\n"
-        "📖 **မဟာဘုတ် ဗေဒင်** (အခမဲ့ — ယခု ရရှိပြီး)\n"
-        "• မွေးနေ့ အခြေပြု ယေဘူယျ ဟောကိန်းများ\n"
-        "• ၆ လ ခန့်မှန်းခြင်း (အထွေထွေ)\n"
-        "• ကံကြမ္မာ လမ်းကြောင်း အကြမ်းဖျင်း\n\n"
-        "🃏 **Tarot ကတ် ဖတ်ခြင်း** (40,000 ကျပ်)\n"
-        "• သင့်ဘဝ အခြေအနေ တိတိပပ ဖတ်ခြင်း\n"
-        "• အချစ်ရေး၊ အလုပ်၊ ငွေကြေး → တိကျသော အဖြေများ\n"
-        "• ရှောင်ရန်/လုပ်ရန် အသေးစိတ် လမ်းညွှန်ချက်\n"
-        "• Su Mon Myint Oo နှင့် တိုက်ရိုက် ဆွေးနွေး\n\n"
-        "💰 **အထူးစျေးနှုန်း: ၄၀,၀၀၀ ကျပ် (Tarot + မဟာဘုတ် ပေါင်းစပ်)** 💰\n\n"
-        "🎯 မဟာဘုတ်က ကံကြမ္မာ လမ်းကြောင်းကို ပြပါတယ်...\n"
-        "🃏 Tarot က **ဘယ်လို ရွေးချယ်ရမလဲ** ကို ပြပါတယ်!\n\n"
-        "📅 ရက်ချိန်း ယူရန် → `ရက်ချိန်း` ဟု ရိုက်ထည့်ပါ\n"
-        "👉 သို့ [ရက်ချိန်း ယူရန်](/booking)"
-    )
 
     if state == "greeting":
         # User should provide their name
@@ -265,31 +327,17 @@ def process_message(sess: dict, user_msg: str) -> str:
         return compute_reading(sess)
 
     elif state == "reading_shown":
-        # User can ask for the 6-month forecast
-        msg_lower = user_msg.lower()
-        if any(kw in user_msg for kw in ["ဟုတ်ကဲ့", "ဟုတ်", "forecast", "ဟောစာ"]) or "yes" in msg_lower:
-            sess["state"] = "forecast_shown"
-            return engine.format_forecast(sess["reading"]) + PROMO_MSG
-        else:
-            return (
-                "📊 **၆ လ ဟောစာတမ်း** ကြည့်ရှုလိုပါက `ဟုတ်ကဲ့` ဟု ရိုက်ထည့်ပါ။\n"
-                "📅 **Tarot ရက်ချိန်း** ယူလိုပါက `ရက်ချိန်း` ဟု ရိုက်ထည့်ပါ။\n\n"
-                "အခြား မေးခွန်း ရှိပါက မေးမြန်းနိုင်ပါတယ်။ 🙏"
-            )
-
-    elif state == "forecast_shown":
+        # Any subsequent message can just reiterate the promo or answer general questions
         msg_lower = user_msg.lower()
         if any(kw in user_msg for kw in ["ကျေးဇူး", "thank", "ကောင်း"]):
             return (
-                "🙏 ကျေးဇူးတင်ပါတယ်!\n\n"
-                "သင့်ဘဝအတွက် ကံကောင်း၊ ကျန်းမာပါစေ! 🌟"
-                + PROMO_MSG
+                "ရပါတယ်ရှင်၊ အချိန်မရွေး ထပ်မံ မေးမြန်းနိုင်ပါတယ်။\n\n"
+                "Tarot ရက်ချိန်း ယူလိုပါက `ရက်ချိန်း` ဟု ရိုက်ထည့်ပါ။ 🙏"
             )
         else:
             return (
-                "📅 **Tarot ရက်ချိန်း** ယူလိုပါက `ရက်ချိန်း` ဟု ရိုက်ထည့်ပါ။\n\n"
-                "အခြား မေးခွန်း ရှိပါက ထပ်မံ မေးမြန်းနိုင်ပါတယ်။ 🙏"
-                + PROMO_MSG
+                "Tarot ရက်ချိန်း ယူလိုပါက `ရက်ချိန်း` ဟု ရိုက်ထည့်ပါ။\n\n"
+                "အခြား မေးခွန်း ရှိပါက မေးမြန်းနိုင်ပါတယ်။ 🙏"
             )
 
     # Handle booking keyword in any state
@@ -316,7 +364,7 @@ def compute_reading(sess: dict) -> str:
         )
         sess["reading"] = reading
         sess["state"] = "reading_shown"
-        return engine.format_reading(reading)
+        return engine.format_reading(reading) + PROMO_MSG
     except Exception as e:
         return f"❌ တွက်ချက်ရာတွင် အမှားရှိပါသည်: {str(e)}\nကျေးဇူးပြု၍ ထပ်မံ ကြိုးစားပါ။"
 

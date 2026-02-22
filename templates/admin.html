@@ -485,6 +485,7 @@
                             ` : `
                                 <a href="sms:${b.phone}" class="btn btn-sms">💬 SMS ပို့ရန်</a>
                             `}
+                            <button class="btn btn-reject" style="margin-left:auto" onclick="deleteBooking('${b.booking_id}')">🗑️ ဖျက်မည်</button>
                         </div>
                     </div>
                 `;
@@ -501,6 +502,18 @@
                 // Update local data
                 const b = allBookings.find(x => x.booking_id === bookingId);
                 if (b) b.status = newStatus;
+                updateStats();
+                renderBookings();
+            } catch (e) { }
+        }
+
+        async function deleteBooking(bookingId) {
+            if (!confirm("ဤရက်ချိန်းကို ဖျက်ရန် သေချာပါသလား?")) return;
+            try {
+                await fetch('/api/bookings/' + bookingId, {
+                    method: 'DELETE'
+                });
+                allBookings = allBookings.filter(b => b.booking_id !== bookingId);
                 updateStats();
                 renderBookings();
             } catch (e) { }

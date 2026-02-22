@@ -497,14 +497,7 @@ class MahaboteEngine:
             lines.append(f"  ✅ {s}")
 
         lines.append("")
-        lines.append("**⚠️ သတိထားရန်:**")
-        for w in house.get("weaknesses_mm", []):
-            lines.append(f"  ⚡ {w}")
-
-        lines.append("")
         lines.append("═══════════════════════════════════════")
-        lines.append("📊 **၆ လ ဟောစာတမ်း** ကို ကြည့်ရှုလိုပါ သလား?")
-        lines.append("`ဟုတ်ကဲ့` ဟု ရိုက်ထည့်ပေးပါ။ 📥")
 
         return "\n".join(lines)
 

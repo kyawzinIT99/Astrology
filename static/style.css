@@ -479,7 +479,8 @@ body {
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 600px) {
     .message {
-        max-width: 95%;
+        max-width: 98%;
+        gap: 6px;
     }
 
     .logo-text h1 {
@@ -488,7 +489,10 @@ body {
 
     .message-bubble {
         font-size: 14px;
-        padding: 10px 14px;
+        padding: 10px 12px;
+        word-break: break-word;
+        /* Ensure long Myanmar words break on mobile */
+        overflow-wrap: anywhere;
     }
 }
 
