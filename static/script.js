@@ -229,11 +229,18 @@ async function downloadPDF() {
 function resetChat() {
     chatMessages.innerHTML = '';
     currentState = 'greeting';
-    currentState = 'greeting';
     // Clear server session
     fetch('/api/init').then(res => res.json()).then(data => {
         addMessage('bot', data.response);
         currentState = data.state;
         updateHint();
     });
+}
+
+// ── Developer Modal ─────────────────────────────────────────
+function toggleDevModal() {
+    const modal = document.getElementById('devModal');
+    if (modal) {
+        modal.classList.toggle('active');
+    }
 }

@@ -28,11 +28,24 @@
                         <p>Powered by itsolutions.mm | 0949567820</p>
                     </div>
                 </div>
-                <button class="btn-new-chat" onclick="resetChat()" title="စတင် Chat အသစ်">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 5v14M5 12h14" />
-                    </svg>
-                </button>
+                <div class="header-actions">
+                    <button class="btn-dev-info" onclick="toggleDevModal()" title="Developer Info">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                            <polyline points="16 8 20 10 16 12"></polyline>
+                            <polyline points="8 8 4 10 8 12"></polyline>
+                        </svg>
+                    </button>
+                    <button class="btn-new-chat" onclick="resetChat()" title="စတင် Chat အသစ်">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -61,6 +74,32 @@
             </div>
             <!-- Removed PDF download area as requested -->
         </footer>
+
+        <!-- Developer Credit Modal -->
+        <div class="dev-modal-overlay" id="devModal" onclick="if(event.target === this) toggleDevModal()">
+            <div class="dev-modal-box">
+                <button class="dev-modal-close" onclick="toggleDevModal()">✕</button>
+                <div class="dev-modal-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-teal)"
+                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-1c0 1.1-.9 2-2 2H5a2 2 0 0 1-2-2h-1a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 12 2z">
+                        </path>
+                        <path d="M9 14h.01"></path>
+                        <path d="M15 14h.01"></path>
+                        <path d="M10 18h4"></path>
+                    </svg>
+                </div>
+                <h3 class="dev-modal-title">Developed by MR. KYAW ZIN TUN</h3>
+                <p class="dev-modal-desc">AI Automation & Tech Solutions</p>
+                <div class="dev-modal-contact">
+                    <a href="mailto:itsolutions.mm@gmail.com">📧 itsolutions.mm@gmail.com</a>
+                    <a href="viber://chat?number=%2B9595043252">💬 095043252 (Viber)</a>
+                </div>
+                <p class="dev-modal-ad">Advertising to clients for technology and AI automation solutions to elevate
+                    your business.</p>
+            </div>
+        </div>
     </div>
 
     <script src="/static/script.js"></script>

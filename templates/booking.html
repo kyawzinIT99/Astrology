@@ -18,6 +18,7 @@
         }
 
         :root {
+            color-scheme: dark;
             --bg-deep: #0a0118;
             --bg-surface: #110827;
             --bg-card: rgba(26, 10, 58, 0.65);
@@ -162,6 +163,17 @@
         .form-group textarea:focus {
             border-color: var(--accent-primary);
             box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+        }
+
+        /* Fix for invisible calendar icon in dark mode */
+        ::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+            opacity: 0.8;
+        }
+
+        ::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
         }
 
         .form-group textarea {
@@ -395,12 +407,15 @@
                     <input type="text" id="bookName" required placeholder="သင့်အမည် ရိုက်ထည့်ပါ">
                 </div>
                 <div class="form-group">
-                    <label>ဖုန်းနံပါတ် *</label>
-                    <input type="tel" id="bookPhone" required placeholder="09xxxxxxxxx">
+                    <label>Viber ဖုန်းနံပါတ် (Viber ရှိသော နံပါတ်သာ) *</label>
+                    <input type="tel" id="bookPhone" required placeholder="09xxxxxxxxx သို့မဟုတ် +959xxxxxxxxx"
+                        pattern="^(09|\+959)\d{7,9}$" title="Viber ဖုန်းနံပါတ်သည် 09 သို့မဟုတ် +959 ဖြင့် စရပါမည်။">
+                    <small style="color: var(--accent-pink); font-size: 11px; display: block; margin-top: 4px;">⚠️ Viber
+                        ဖြင့် အတည်ပြုနိုင်ခြင်း မရှိပါက ရက်ချိန်း ပျက်ပြယ်ပါမည်။</small>
                 </div>
                 <div class="form-group">
                     <label>ရက်စွဲ ရွေးချယ်ပါ *</label>
-                    <input type="date" id="bookDate" required>
+                    <input type="date" id="bookDate" required onclick="this.showPicker()">
                 </div>
                 <div class="form-group">
                     <label>အချိန် ရွေးချယ်ပါ *</label>
@@ -440,15 +455,29 @@
         <!-- Success Card (hidden) -->
         <div class="card success-card" id="successCard" style="display: none;">
             <span class="check">✅</span>
-            <h2>ရက်ချိန်း အောင်မြင်စွာ ယူပြီးပါပြီ!</h2>
+            <h2>ရက်ချိန်း တောင်းဆိုမှု အောင်မြင်ပါသည်!</h2>
             <p>
                 ရက်ချိန်း ရည်ညွှန်းအမှတ်:<br>
                 <span class="booking-ref" id="bookingRef"></span>
             </p>
-            <p style="margin-top: 16px;">
-                Su Mon Myint Oo မှ အတည်ပြုပြီးပါက ဖုန်းဖြင့်<br>
-                ဆက်သွယ်ပေးပါမည်။ 📞
-            </p>
+
+            <div
+                style="background: rgba(45, 212, 191, 0.1); border: 1px dashed var(--accent-teal); padding: 16px; border-radius: 12px; margin-top: 16px; text-align: left;">
+                <h3 style="color: var(--accent-gold); font-size: 15px; margin-bottom: 8px;">ငွေပေးချေရန် လိုအပ်ပါသည် 💰
+                </h3>
+                <p style="font-size: 13px; color: var(--text-primary); margin-bottom: 8px;">
+                    ရက်ချိန်းကို အပြီးသတ် အတည်ပြုနိုင်ရန် အောက်ပါ KPay အကောင့်သို့ <strong>၃၀,၀၀၀ ကျပ်</strong>
+                    လွှဲပြောင်းပေးပါ:
+                </p>
+                <p style="font-size: 14px; font-weight: 700; color: var(--accent-primary); margin-bottom: 8px;">
+                    KPay: 0943093480<br>
+                    အမည်: Su Mon Myint Oo
+                </p>
+                <p style="font-size: 12px; color: var(--text-secondary);">
+                    ငွေလွှဲပြေစာ (Screenshot) ကို <strong>ရက်ချိန်း ရည်ညွှန်းအမှတ်</strong> နှင့်တကွ Viber မှတစ်ဆင့်
+                    ပေးပို့ပေးပါ။ ငွေလွှဲပြေစာ ရရှိမှသာ ရက်ချိန်း အတည်ပြုပေးပါမည်။
+                </p>
+            </div>
             <br>
             <a href="/" class="btn-back" style="justify-content: center;">← Chat သို့ ပြန်သွားရန်</a>
         </div>
@@ -493,6 +522,14 @@
 
         async function submitBooking(e) {
             e.preventDefault();
+
+            const phoneVal = document.getElementById('bookPhone').value.trim();
+            const viberRegex = /^(09|\+959)\d{7,9}$/;
+            if (!viberRegex.test(phoneVal)) {
+                alert('Viber ဖုန်းနံပါတ် အမှန်ကိုသာ ထည့်သွင်းပေးပါ။ (ဥပမာ - 09123456789)');
+                return;
+            }
+
             if (!selectedTime) {
                 alert('ကျေးဇူးပြု၍ အချိန် ရွေးချယ်ပါ။');
                 return;
