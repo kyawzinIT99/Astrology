@@ -19,7 +19,7 @@ image = (
 
 volume = modal.Volume.from_name("astrology-bookings-vol", create_if_missing=True)
 
-@app.function(image=image, volumes={"/data": volume}, concurrency_limit=1)
+@app.function(image=image, volumes={"/data": volume}, max_containers=1)
 @modal.wsgi_app()
 def wsgi_app():
     import sys

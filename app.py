@@ -17,7 +17,14 @@ from pdf_generator import generate_pdf
 from sheets_sync import sync_new_booking, sync_status_update
 
 app = Flask(__name__)
-app.secret_key = "astrology_chatbot_super_secret_key" # Required for sessions
+app.secret_key = "astrology_chatbot_super_secret_key_2024_v2"  # Required for sessions
+
+# Cookie security — set Secure flag when deployed to HTTPS (Modal)
+import os as _os
+_on_modal = _os.path.exists("/data") or _os.path.exists("/root/fonts")
+app.config["SESSION_COOKIE_SECURE"] = _on_modal      # Only send cookie over HTTPS
+app.config["SESSION_COOKIE_HTTPONLY"] = True          # Block JS access to cookie
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"        # Allow redirects to send cookie
 
 engine = MahaboteEngine()
 
@@ -168,7 +175,8 @@ def login_page():
         
         if username == "kyawzin" and password == "Kyawzin@123456":
             session["admin_logged_in"] = True
-            return redirect(url_for("admin_page"))
+            session.permanent = False
+            return redirect(url_for("admin_page"), 303)  # 303 forces GET after POST
         else:
             flash("Invalid credentials. Please try again.")
             
@@ -180,6 +188,93 @@ def logout():
     """Log out the admin."""
     session.pop("admin_logged_in", None)
     return redirect(url_for("login_page"))
+
+
+@app.route("/api/admin/generate_pdf", methods=["POST"])
+def admin_generate_pdf():
+    """Generate Mahabote PDF for admin only."""
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    name = data.get("name")
+    dob_str = data.get("dob")
+    is_pm = data.get("is_wednesday_pm")
+
+    if not name or not dob_str:
+        return jsonify({"error": "Missing name or date of birth"}), 400
+
+    try:
+        dob = datetime.strptime(dob_str, "%Y-%m-%d")
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+
+    try:
+        reading = engine.calculate(
+            name=name,
+            birth_year=dob.year,
+            birth_month=dob.month,
+            birth_day=dob.day,
+            is_wednesday_pm=is_pm
+        )
+        pdf_path = generate_pdf(reading, engine)
+
+        filename = os.path.basename(pdf_path)
+
+        # On Modal, PDFs are in /data/reports (persistent volume)
+        # Serve via a dedicated route; locally, serve from static/reports
+        if os.path.exists("/data"):
+            pdf_url = f"/api/admin/pdf/{filename}"
+        else:
+            pdf_url = url_for('static', filename=f'reports/{filename}')
+
+
+        return jsonify({"message": "PDF generated successfully", "url": pdf_url})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/admin/pdf/<filename>")
+def serve_admin_pdf(filename):
+    """Serve a generated PDF from the persistent volume (Modal) or static dir."""
+    if not session.get("admin_logged_in"):
+        print(f"[PDF Serve] Unauthorized access attempt for {filename}")
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    # Sanitize filename
+    filename = os.path.basename(filename)
+    
+    if os.path.exists("/data"):
+        directory = "/data/reports"
+    else:
+        directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "reports")
+        
+    pdf_path = os.path.join(directory, filename)
+    print(f"[PDF Serve] Request for {filename} -> {pdf_path}")
+    
+    if not os.path.exists(pdf_path):
+        print(f"[PDF Serve] File not found: {pdf_path}")
+        return jsonify({"error": "PDF not found"}), 404
+        
+    try:
+        # Get actual file size
+        filesize = os.path.getsize(pdf_path)
+        print(f"[PDF Serve] Serving {filename} ({filesize} bytes)")
+
+        from flask import send_from_directory, make_response
+        response = make_response(send_from_directory(directory, filename, mimetype="application/pdf"))
+        
+        # Explicitly set headers to prevent unwanted transformations/encoding issues
+        response.headers['Content-Length'] = filesize
+        response.headers['Content-Disposition'] = f'inline; filename="{filename}"'
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        # Prevent Modal/Cloudflare from gzipping/zstding if that's causing issues
+        response.headers['Content-Encoding'] = 'identity'
+        
+        return response
+    except Exception as e:
+        print(f"[PDF Serve] Error serving file: {str(e)}")
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
 
 @app.route("/api/bookings/status", methods=["POST"])

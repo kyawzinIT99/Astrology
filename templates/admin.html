@@ -391,6 +391,53 @@
         </div>
 
         <div class="card">
+            <h2>📄 မဟာဘုတ် ၆ လ ဟောစာတမ်း PDF ထုတ်ရန်</h2>
+
+            <!-- Year mode toggle -->
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+                <span style="font-size: 12px; color: var(--text-muted);">နှစ်ရိုက်ထည့်ပုံစံ:</span>
+                <button type="button" id="yearModeBtn" onclick="toggleYearMode()" style="padding: 4px 14px; border-radius: 20px; border: 1px solid var(--accent-primary);
+                           background: rgba(139,92,246,0.15); color: var(--accent-secondary);
+                           font-family: 'Padauk'; font-size: 12px; cursor: pointer;">
+                    📅 CE (ခရစ်နှစ်)
+                </button>
+                <span id="yearModeHint" style="font-size: 11px; color: var(--text-muted);">
+                    ✏️ ဥပမာ - 1988
+                </span>
+            </div>
+
+            <form id="pdfForm" onsubmit="generatePDF(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                <input type="text" id="pdfName" placeholder="အမည်" required
+                    style="padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.2); color: white; font-family: 'Padauk';">
+
+                <!-- Custom date row: Day / Month / Year -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 8px;">
+                    <input type="number" id="pdfDay" placeholder="ရက် (DD)" min="1" max="31" required
+                        style="padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.2); color: white; font-family: 'Padauk';">
+                    <input type="number" id="pdfMonth" placeholder="လ (MM)" min="1" max="12" required
+                        style="padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.2); color: white; font-family: 'Padauk';">
+                    <div style="position: relative;">
+                        <input type="number" id="pdfYear" placeholder="နှစ်" min="1" required oninput="updateYearHint()"
+                            style="padding: 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.2); color: white; font-family: 'Padauk'; width: 100%;">
+                        <div id="cePreview"
+                            style="font-size: 10px; color: var(--accent-teal); margin-top: 3px; min-height: 14px;">
+                        </div>
+                    </div>
+                </div>
+
+                <label
+                    style="font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="pdfIsWedPm"> ဗုဒ္ဓဟူး ညနေ (ရာဟု) ဖွားဖြစ်ပါသလား?
+                </label>
+                <button type="submit" id="pdfBtn" class="btn"
+                    style="background: var(--accent-primary); color: white; border: none; font-size: 14px; padding: 10px; justify-content: center; margin-top: 5px;">
+                    PDF ထုတ်မည်
+                </button>
+            </form>
+            <div id="pdfResult" style="margin-top: 15px; font-size: 13px; text-align: center; display: none;"></div>
+        </div>
+
+        <div class="card">
             <div id="bookingsList">
                 <div class="empty">ရက်ချိန်း မရှိသေးပါ</div>
             </div>
@@ -522,6 +569,92 @@
                 updateStats();
                 renderBookings();
             } catch (e) { }
+        }
+
+        // ── BE / CE Year Toggle ──────────────────────────────────────
+        let yearMode = 'CE'; // 'CE' or 'BE'
+
+        function toggleYearMode() {
+            const btn = document.getElementById('yearModeBtn');
+            const hint = document.getElementById('yearModeHint');
+            if (yearMode === 'CE') {
+                yearMode = 'BE';
+                btn.innerHTML = '🌙 BE (ဗုဒ္ဓနှစ်)';
+                btn.style.borderColor = 'var(--accent-gold)';
+                btn.style.color = 'var(--accent-gold)';
+                hint.textContent = '✏️ ဥပမာ - 2531 (= 1988 CE)';
+            } else {
+                yearMode = 'CE';
+                btn.innerHTML = '📅 CE (ခရစ်နှစ်)';
+                btn.style.borderColor = 'var(--accent-primary)';
+                btn.style.color = 'var(--accent-secondary)';
+                hint.textContent = '✏️ ဥပမာ - 1988';
+            }
+            updateYearHint();
+        }
+
+        function updateYearHint() {
+            const yearInput = document.getElementById('pdfYear');
+            const preview = document.getElementById('cePreview');
+            const val = parseInt(yearInput.value);
+            if (!val || isNaN(val)) { preview.textContent = ''; return; }
+            if (yearMode === 'BE') {
+                const ce = val - 543;
+                preview.textContent = `→ ခရစ်နှစ်: ${ce}`;
+            } else {
+                const be = val + 543;
+                preview.textContent = `→ ဗုဒ္ဓနှစ်: ${be} BE`;
+            }
+        }
+
+        // ── PDF Generator ────────────────────────────────────────────
+        async function generatePDF(e) {
+            e.preventDefault();
+            const btn = document.getElementById('pdfBtn');
+            const resultDiv = document.getElementById('pdfResult');
+            const name = document.getElementById('pdfName').value.trim();
+            const day = parseInt(document.getElementById('pdfDay').value);
+            const month = parseInt(document.getElementById('pdfMonth').value);
+            let year = parseInt(document.getElementById('pdfYear').value);
+            const isWedPm = document.getElementById('pdfIsWedPm').checked;
+
+            // Convert BE → CE for the backend
+            if (yearMode === 'BE') year = year - 543;
+
+            if (!name || isNaN(day) || isNaN(month) || isNaN(year) || year < 1 || year > 9999) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `<span style="color: var(--accent-red)">❌ နာမည် / ရက်စွဲ ပြည့်စုံစွာ ဖြည့်ပါ</span>`;
+                return;
+            }
+
+            // Format as YYYY-MM-DD
+            const dob = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+            resultDiv.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/admin/generate_pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, dob, is_wednesday_pm: isWedPm })
+                });
+                const data = await res.json();
+
+                resultDiv.style.display = 'block';
+                if (res.ok) {
+                    resultDiv.innerHTML = `<a href="${data.url}" target="_blank" style="color: var(--accent-teal); text-decoration: underline;">✅ ${name} အတွက် PDF ဒေါင်းလုဒ်ရယူရန် နှိပ်ပါ</a>`;
+                } else {
+                    resultDiv.innerHTML = `<span style="color: var(--accent-red)">❌ Error: ${data.error}</span>`;
+                }
+            } catch (err) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `<span style="color: var(--accent-red)">❌ Failed to generate PDF</span>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'PDF ထုတ်မည်';
+            }
         }
 
         loadBookings();

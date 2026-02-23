@@ -8,3 +8,7 @@ credentials.json
 .DS_Store
 bookings.json
 *.lock
+static/reports/
+test_*.py
+debug_*.py
+*.pdf

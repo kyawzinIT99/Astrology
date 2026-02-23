@@ -11,9 +11,30 @@ from fpdf import FPDF
 from mahabote_engine import MahaboteEngine, MahaboteReading
 
 
-# Path to fonts directory
-FONT_DIR = os.path.join(os.path.dirname(__file__), "fonts")
-REPORT_DIR = os.path.join(os.path.dirname(__file__), "static", "reports")
+# Path to fonts directory — try multiple locations for Modal compatibility
+def _find_font_dir():
+    candidates = [
+        "/root/fonts",                                           # Modal mounted path
+        os.path.join("/root", "fonts"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts"),  # local dev
+        os.path.join(os.getcwd(), "fonts"),
+    ]
+    for p in candidates:
+        if os.path.exists(p) and os.path.isdir(p):
+            font_check = os.path.join(p, "Padauk-Regular.ttf")
+            if os.path.exists(font_check):
+                print(f"[PDF] ✅ Found Myanmar font at: {p}")
+                return p
+    print(f"[PDF] ⚠️ Myanmar font not found. Searched: {candidates}")
+    return candidates[2] if len(candidates) > 2 else "fonts"  # fallback
+
+FONT_DIR = _find_font_dir()
+
+# Report directory — use Modal persistent volume if available, else local static/
+if os.path.exists("/data"):
+    REPORT_DIR = "/data/reports"
+else:
+    REPORT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "reports")
 
 
 class AstrologyPDF(FPDF):
@@ -77,182 +98,198 @@ class AstrologyPDF(FPDF):
         """Add a styled section header."""
         self.set_fill_color(139, 92, 246)
         self.set_text_color(255, 255, 255)
-        self._set_font_safe("B", 13)
+        self._set_font_safe("B", 14)  # Increased from 13
         label = text_mm if self._has_myanmar_font else text_en
-        self.cell(0, 10, f"  {label}", fill=True, new_x="LMARGIN", new_y="NEXT")
+        self.cell(0, 12, f"  {label}", fill=True, new_x="LMARGIN", new_y="NEXT")  # Increased height from 10 to 12
         self.set_text_color(0, 0, 0)
-        self.ln(3)
+        self.ln(4)  # Increased from 3
 
     def add_info_row(self, label_mm: str, label_en: str, value_mm: str, value_en: str):
         """Add an info row with label and value."""
-        self._set_font_safe("B", 11)
+        self._set_font_safe("B", 12)  # Increased from 11
         label = label_mm if self._has_myanmar_font else label_en
-        self.cell(60, 8, label)
-        self._set_font_safe("", 11)
+        self.cell(60, 9, label)  # Increased height from 8 to 9
+        self._set_font_safe("", 12)  # Increased from 11
         value = value_mm if self._has_myanmar_font else value_en
-        self.cell(0, 8, value, new_x="LMARGIN", new_y="NEXT")
+        self.cell(0, 9, value, new_x="LMARGIN", new_y="NEXT")  # Increased height from 8 to 9
 
     def add_paragraph(self, text_mm: str, text_en: str):
         """Add a paragraph."""
-        self._set_font_safe("", 10)
+        self._set_font_safe("", 11)  # Increased from 10
         text = text_mm if self._has_myanmar_font else text_en
-        self.multi_cell(0, 7, text)
-        self.ln(2)
+        self.multi_cell(0, 9, text)  # Increased height from 7 to 9
+        self.ln(3)  # Increased from 2
 
     def add_bullet(self, text_mm: str, text_en: str, icon: str = "- "):
         """Add a bullet point."""
-        self._set_font_safe("", 10)
+        self._set_font_safe("", 11)  # Increased from 10
         self.set_x(self.l_margin)  # Reset x to left margin
         text = text_mm if self._has_myanmar_font else text_en
-        self.multi_cell(0, 7, f"  {icon}{text}")
+        self.multi_cell(0, 9, f"  {icon}{text}")  # Increased height from 7 to 9
+
+    def generate_report(self, engine: MahaboteEngine):
+        """Generates the content of the PDF report."""
+        reading = self.reading
+        self.add_page()
+
+        house = reading.house
+        bd = reading.birth_day
+        md = reading.myanmar_date
+
+        # ── Personal Info Section ──
+        self.add_section_header("ကိုယ်ရေးအချက်အလက်", "Personal Information")
+        self.add_info_row("အမည်:", "Name:", reading.name, reading.name)
+        self.add_info_row(
+            "မွေးနေ့:", "Birth Date:",
+            reading.birth_date.strftime("%Y-%m-%d"), reading.birth_date.strftime("%Y-%m-%d")
+        )
+        self.add_info_row(
+            "မြန်မာရက်စွဲ:", "Myanmar Date:",
+            md.display, f"ME {md.myanmar_year}, {md.month_name}"
+        )
+        self.add_info_row(
+            "မွေးမြန်မာသက္ကရာဇ်:", "Birth Myanmar Era:",
+            f"{reading.myanmar_year} ခုနှစ်", str(reading.myanmar_year)
+        )
+        self.add_info_row(
+            "လက်ရှိအသက်:", "Current Age:",
+            f"{reading.current_age} နှစ် (မြန်မာသက္ကရာဇ် {reading.current_myanmar_year} အရ)", f"{reading.current_age} Years Old"
+        )
+        self.add_info_row(
+            "မွေးနေ့:", "Birth Day:",
+            f"{bd['name_mm']} ({bd['planet_mm']})",
+            f"{bd['name_en']} ({bd['planet_en']})"
+        )
+        self.add_info_row(
+            "ရာသီတိရစ္ဆာန်:", "Zodiac Animal:",
+            bd['animal_mm'], bd['animal_en']
+        )
+        self.add_info_row(
+            "ကံကောင်းသောဦးတည်ရာ:", "Lucky Direction:",
+            bd['direction_mm'], bd['direction_mm']
+        )
+        self.ln(5)
+
+        # ── House Analysis Section ──
+        self.add_section_header("မဟာဘုတ်အိမ် ဆန်းစစ်ခြင်း", "Mahabote House Analysis")
+        self.add_info_row(
+            "မူလ မဟာဘုတ်အိမ်:", "Birth House:",
+            f"{house['name_mm']} ({house['name_en']})",
+            f"{house['name_en']} ({house['planet_en']})"
+        )
+        self.add_info_row(
+            "အိမ်ရှင်ဂြိုဟ်:", "Ruling Planet:",
+            f"{house['planet_mm']} ({house['planet_en']})",
+            f"{house['planet_en']}"
+        )
+        nature_mm = "ကောင်းသောအိမ်" if house['nature'] == 'asset' else "စိန်ခေါ်သောအိမ်"
+        self.add_info_row(
+            "သဘာဝ:", "Nature:",
+            nature_mm, house['nature'].title()
+        )
+        self.add_info_row("ကြွင်းကိန်း:", "Remainder:", str(reading.house_remainder), str(reading.house_remainder))
+        self.ln(3)
+
+        # Personality
+        self.add_section_header("ကိုယ်ရည်ကိုယ်သွေး (မူလအိမ်)", "Personality Profile (Birth House)")
+        self.add_paragraph(house['personality_mm'], house['personality_en'])
+        self.ln(2)
+
+        # Strengths
+        self._set_font_safe("B", 11)
+        if self._has_myanmar_font:
+            self.cell(0, 8, "အားသာချက်များ:", new_x="LMARGIN", new_y="NEXT")
+        else:
+            self.cell(0, 8, "Strengths:", new_x="LMARGIN", new_y="NEXT")
+        for s in house.get("strengths_mm", []):
+            self.add_bullet(s, s, "+ ")
+
+        self.ln(2)
+
+        # Weaknesses
+        self._set_font_safe("B", 11)
+        if self._has_myanmar_font:
+            self.cell(0, 8, "သတိထားရန်:", new_x="LMARGIN", new_y="NEXT")
+        else:
+            self.cell(0, 8, "Caution:", new_x="LMARGIN", new_y="NEXT")
+        for w in house.get("weaknesses_mm", []):
+            self.add_bullet(w, w, "- ")
+
+        # ── Current Year Prediction ──
+        self.add_page()
+        self.add_section_header("ယခုနှစ်ကံကြမ္မာ (သက်ရောက်အိမ်)", "Current Year Fortune (Thet-Yauk)")
+        curr_house = reading.current_year_house
+        self.add_info_row(
+            "သက်ရောက်အိမ်:", "Current House:",
+            f"{curr_house['name_mm']} ({curr_house['name_en']})",
+            f"{curr_house['name_en']} ({curr_house['planet_en']})"
+        )
+        curr_nature_mm = "ကောင်းသောနှစ်" if curr_house['nature'] == 'asset' else "စိန်ခေါ်သောနှစ်"
+        self.add_info_row(
+            "နှစ်၏ သဘာဝ:", "Nature of Year:",
+            curr_nature_mm, curr_house['nature'].title()
+        )
+        self.ln(3)
+        self.add_paragraph(curr_house['personality_mm'], curr_house['personality_en'])
+        self.ln(5)
+
+        # ── 6-Month Forecast Section ──
+        self.add_section_header("၆ လ ဟောစာတမ်း", "6-Month Forecast")
+
+        forecasts = engine.generate_6month_forecast(reading)
+        for f in forecasts:
+            # Month header
+            self.set_fill_color(243, 232, 255)
+            self._set_font_safe("B", 11)
+            self.cell(0, 8, f"  {f['month_en']}", fill=True, new_x="LMARGIN", new_y="NEXT")
+            self.ln(1)
+
+            # Modifier
+            self._set_font_safe("", 10)
+            self.set_text_color(88, 28, 135)
+            if self._has_myanmar_font:
+                self.cell(0, 7, f"    {f['modifier_mm']}", new_x="LMARGIN", new_y="NEXT")
+            else:
+                self.cell(0, 7, f"    {f['modifier_mm']}", new_x="LMARGIN", new_y="NEXT")
+            self.set_text_color(0, 0, 0)
+
+            # Do
+            self.set_text_color(22, 101, 52)
+            self.add_bullet(f"လုပ်သင့်သည်: {f['do_mm']}", f"DO: {f['do_mm']}", "[+] ")
+
+            # Don't
+            self.set_text_color(185, 28, 28)
+            self.add_bullet(f"ရှောင်ကြဉ်ရန်: {f['dont_mm']}", f"DON'T: {f['dont_mm']}", "[-] ")
+
+            self.set_text_color(0, 0, 0)
+            self.ln(3)
+
+        # Footer note
+        self.ln(10)
+        self.set_text_color(128, 128, 128)
+        self._set_font_safe("", 8)
+        gen_date = datetime.now().strftime("%Y-%m-%d %H:%M")
+        if self._has_myanmar_font:
+            self.cell(0, 7, f"ဤဟောစာတမ်းကို {gen_date} တွင် ထုတ်လုပ်ထားပါသည်။", align="C", new_x="LMARGIN", new_y="NEXT")
+            self.cell(0, 7, "မြန်မာ မဟာဘုတ် ဗေဒင် အခြေခံ တွက်ချက်မှုများ ပါဝင်ပါသည်။", align="C")
+        else:
+            self.cell(0, 7, f"Generated on {gen_date}", align="C", new_x="LMARGIN", new_y="NEXT")
+            self.cell(0, 7, "Based on traditional Myanmar Mahabote astrology calculations.", align="C")
 
 
 def generate_pdf(reading: MahaboteReading, engine: MahaboteEngine) -> str:
-    """
-    Generate a professional PDF report.
-    Returns the file path of the generated PDF.
-    """
-    os.makedirs(REPORT_DIR, exist_ok=True)
-
+    """Helper function to generate a PDF and return the file path."""
     pdf = AstrologyPDF(reading)
-    pdf.add_page()
+    pdf.generate_report(engine)
 
-    house = reading.house
-    bd = reading.birth_day
-    md = reading.myanmar_date
+    # Use underscores instead of spaces for safer URLs
+    safe_name = reading.name.replace(" ", "_").replace("/", "_").replace("\\", "_")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{safe_name}_{timestamp}.pdf"
 
-    # ── Personal Info Section ──
-    pdf.add_section_header("ကိုယ်ရေးအချက်အလက်", "Personal Information")
-    pdf.add_info_row("အမည်:", "Name:", reading.name, reading.name)
-    pdf.add_info_row(
-        "မွေးနေ့:", "Birth Date:",
-        reading.birth_date.strftime("%Y-%m-%d"), reading.birth_date.strftime("%Y-%m-%d")
-    )
-    pdf.add_info_row(
-        "မြန်မာရက်စွဲ:", "Myanmar Date:",
-        md.display, f"ME {md.myanmar_year}, {md.month_name}"
-    )
-    pdf.add_info_row(
-        "မြန်မာသက္ကရာဇ်:", "Myanmar Era:",
-        f"{reading.myanmar_year} ခုနှစ်", str(reading.myanmar_year)
-    )
-    pdf.add_info_row(
-        "မွေးနေ့:", "Birth Day:",
-        f"{bd['name_mm']} ({bd['planet_mm']})",
-        f"{bd['name_en']} ({bd['planet_en']})"
-    )
-    pdf.add_info_row(
-        "ရာသီတိရစ္ဆာန်:", "Zodiac Animal:",
-        bd['animal_mm'], bd['animal_en']
-    )
-    pdf.add_info_row(
-        "ကံကောင်းသောဦးတည်ရာ:", "Lucky Direction:",
-        bd['direction_mm'], bd['direction_mm']
-    )
-    pdf.ln(5)
+    if not os.path.exists(REPORT_DIR):
+        os.makedirs(REPORT_DIR, exist_ok=True)
 
-    # ── House Analysis Section ──
-    pdf.add_section_header("မဟာဘုတ်အိမ် ဆန်းစစ်ခြင်း", "Mahabote House Analysis")
-    pdf.add_info_row(
-        "မဟာဘုတ်အိမ်:", "House:",
-        f"{house['name_mm']} ({house['name_en']})",
-        f"{house['name_en']} ({house['planet_en']})"
-    )
-    pdf.add_info_row(
-        "အိမ်ရှင်ဂြိုဟ်:", "Ruling Planet:",
-        f"{house['planet_mm']} ({house['planet_en']})",
-        f"{house['planet_en']}"
-    )
-    nature_mm = "ကောင်းသောအိမ်" if house['nature'] == 'asset' else "စိန်ခေါ်သောအိမ်"
-    pdf.add_info_row(
-        "သဘာဝ:", "Nature:",
-        nature_mm, house['nature'].title()
-    )
-    pdf.add_info_row("ကြွင်းကိန်း:", "Remainder:", str(reading.house_remainder), str(reading.house_remainder))
-    pdf.ln(3)
-
-    # Personality
-    pdf.add_section_header("ကိုယ်ရည်ကိုယ်သွေး", "Personality Profile")
-    pdf.add_paragraph(house['personality_mm'], house['personality_en'])
-    pdf.ln(2)
-
-    # Strengths
-    pdf._set_font_safe("B", 11)
-    if pdf._has_myanmar_font:
-        pdf.cell(0, 8, "အားသာချက်များ:", new_x="LMARGIN", new_y="NEXT")
-    else:
-        pdf.cell(0, 8, "Strengths:", new_x="LMARGIN", new_y="NEXT")
-    for s in house.get("strengths_mm", []):
-        pdf.add_bullet(s, s, "+ ")
-
-    pdf.ln(2)
-
-    # Weaknesses
-    pdf._set_font_safe("B", 11)
-    if pdf._has_myanmar_font:
-        pdf.cell(0, 8, "သတိထားရန်:", new_x="LMARGIN", new_y="NEXT")
-    else:
-        pdf.cell(0, 8, "Caution:", new_x="LMARGIN", new_y="NEXT")
-    for w in house.get("weaknesses_mm", []):
-        pdf.add_bullet(w, w, "- ")
-
-    # ── 6-Month Forecast Section ──
-    pdf.add_page()
-    pdf.add_section_header("၆ လ ဟောစာတမ်း", "6-Month Forecast")
-
-    forecasts = engine.generate_6month_forecast(reading)
-    for f in forecasts:
-        # Month header
-        pdf.set_fill_color(243, 232, 255)
-        pdf._set_font_safe("B", 11)
-        pdf.cell(0, 8, f"  {f['month_en']}", fill=True, new_x="LMARGIN", new_y="NEXT")
-        pdf.ln(1)
-
-        # Modifier
-        pdf._set_font_safe("", 10)
-        pdf.set_text_color(88, 28, 135)
-        if pdf._has_myanmar_font:
-            pdf.cell(0, 7, f"    {f['modifier_mm']}", new_x="LMARGIN", new_y="NEXT")
-        else:
-            pdf.cell(0, 7, f"    {f['modifier_mm']}", new_x="LMARGIN", new_y="NEXT")
-        pdf.set_text_color(0, 0, 0)
-
-        # Do
-        pdf.set_text_color(22, 101, 52)
-        pdf.add_bullet(f"လုပ်သင့်သည်: {f['do_mm']}", f"DO: {f['do_mm']}", "[+] ")
-
-        # Don't
-        pdf.set_text_color(185, 28, 28)
-        pdf.add_bullet(f"ရှောင်ကြဉ်ရန်: {f['dont_mm']}", f"DON'T: {f['dont_mm']}", "[-] ")
-
-        pdf.set_text_color(0, 0, 0)
-        pdf.ln(3)
-
-    # Footer note
-    pdf.ln(10)
-    pdf.set_text_color(128, 128, 128)
-    pdf._set_font_safe("", 8)
-    gen_date = datetime.now().strftime("%Y-%m-%d %H:%M")
-    if pdf._has_myanmar_font:
-        pdf.cell(0, 7, f"ဤဟောစာတမ်းကို {gen_date} တွင် ထုတ်လုပ်ထားပါသည်။", align="C", new_x="LMARGIN", new_y="NEXT")
-        pdf.cell(0, 7, "မြန်မာ မဟာဘုတ် ဗေဒင် အခြေခံ တွက်ချက်မှုများ ပါဝင်ပါသည်။", align="C")
-    else:
-        pdf.cell(0, 7, f"Generated on {gen_date}", align="C", new_x="LMARGIN", new_y="NEXT")
-        pdf.cell(0, 7, "Based on traditional Myanmar Mahabote astrology calculations.", align="C")
-
-    # Save
-    safe_name = "".join(c for c in reading.name if c.isalnum() or c in " _-").strip()
-    if not safe_name:
-        safe_name = "report"
-    filename = f"{safe_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-    filepath = os.path.join(REPORT_DIR, filename)
-    pdf.output(filepath)
-
-    return filepath
-
-
-if __name__ == "__main__":
-    engine = MahaboteEngine()
-    reading = engine.calculate("တက်ဇော်", 1990, 5, 15)
-    path = generate_pdf(reading, engine)
-    print(f"PDF generated: {path}")
+    file_path = os.path.join(REPORT_DIR, filename)
+    pdf.output(file_path)
+    return file_path

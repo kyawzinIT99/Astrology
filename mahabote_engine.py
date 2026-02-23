@@ -347,6 +347,9 @@ class MahaboteReading:
     house: dict
     birth_day: dict
     forecast_rules: dict
+    current_age: int = 0
+    current_myanmar_year: int = 0
+    current_year_house: dict = field(default_factory=dict)
 
     @property
     def house_remainder(self) -> int:
@@ -392,6 +395,14 @@ class MahaboteEngine:
         # Forecast rules
         rules = FORECAST_RULES[house_index]
 
+        now = datetime.now()
+        current_mm_date = gregorian_to_myanmar(now.year, now.month, now.day)
+        current_myanmar_year = current_mm_date.myanmar_year
+        current_age = current_myanmar_year - my_year + 1
+        
+        current_year_house_index = current_age % 7
+        current_year_house = HOUSES[current_year_house_index]
+
         return MahaboteReading(
             name=name,
             birth_date=datetime(birth_year, birth_month, birth_day),
@@ -402,6 +413,9 @@ class MahaboteEngine:
             house=house,
             birth_day=birth_day_info,
             forecast_rules=rules,
+            current_age=current_age,
+            current_myanmar_year=current_myanmar_year,
+            current_year_house=current_year_house,
         )
 
     def generate_6month_forecast(self, reading: MahaboteReading) -> list:
@@ -472,6 +486,8 @@ class MahaboteEngine:
             f"📅 **မွေးနေ့**: {reading.birth_date.strftime('%Y-%m-%d')}",
             f"🗓️ **မြန်မာရက်စွဲ**: {md.display}",
             f"📆 **မြန်မာသက္ကရာဇ်**: {reading.myanmar_year} ခုနှစ်",
+            f"🎂 **လက်ရှိအသက်**: {reading.current_age} နှစ် (မြန်မာသက္ကရာဇ် {reading.current_myanmar_year} အရ)",
+            f"🔮 **ယခုနှစ်ကံကြမ္မာ (သက်ရောက်အိမ်)**: {reading.current_year_house['name_mm']} ({reading.current_year_house['name_en']})",
             f"🌙 **လ အလင်း**: {md.moon_phase_name}",
             "",
             "═══════════════════════════════════════",
@@ -507,7 +523,9 @@ class MahaboteEngine:
 
         lines = [
             f"📅 **{reading.name}** ၏ ၆ လ ဟောစာတမ်း",
-            f"🏠 {reading.house['name_mm']} ({reading.house['name_en']})",
+            f"🎂 **လက်ရှိအသက်**: {reading.current_age} နှစ် (မြန်မာသက္ကရာဇ် {reading.current_myanmar_year} အရ)",
+            f"🔮 **ယခုနှစ်ကံကြမ္မာ (သက်ရောက်အိမ်)**: {reading.current_year_house['name_mm']} ({reading.current_year_house['name_en']})",
+            f"🏠 မူလအိမ်: {reading.house['name_mm']} ({reading.house['name_en']})",
             "",
             "═══════════════════════════════════════",
         ]
