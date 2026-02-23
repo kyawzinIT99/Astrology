@@ -99,8 +99,9 @@
 
         .nav-links {
             display: flex;
-            gap: 12px;
+            gap: 16px;
             margin-bottom: 20px;
+            justify-content: center;
         }
 
         .nav-links a {
@@ -108,6 +109,9 @@
             font-size: 13px;
             text-decoration: none;
             transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .nav-links a:hover {
@@ -349,7 +353,8 @@
     <div class="stars-container" id="starsContainer"></div>
     <div class="page">
         <div class="nav-links">
-            <a href="/">← Chat</a>
+            <a href="/">← Chat သို့ ပြန်သွားရန်</a>
+            <a href="/logout" style="color: var(--accent-pink);">🚪 အကောင့်ထွက်မည်</a>
             <a href="/booking">📅 Booking</a>
         </div>
 

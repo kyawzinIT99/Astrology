@@ -10,14 +10,14 @@ import re
 import json
 import uuid
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify, send_file, session
+from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for, flash
 
 from mahabote_engine import MahaboteEngine, MahaboteReading
 from pdf_generator import generate_pdf
 from sheets_sync import sync_new_booking, sync_status_update
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = "astrology_chatbot_super_secret_key" # Required for sessions
 
 engine = MahaboteEngine()
 
@@ -154,7 +154,32 @@ def booking_page():
 @app.route("/admin")
 def admin_page():
     """Serve the admin dashboard."""
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("login_page"))
     return render_template("admin.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login_page():
+    """Admin login page."""
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        
+        if username == "kyawzin" and password == "Kyawzin@123456":
+            session["admin_logged_in"] = True
+            return redirect(url_for("admin_page"))
+        else:
+            flash("Invalid credentials. Please try again.")
+            
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    """Log out the admin."""
+    session.pop("admin_logged_in", None)
+    return redirect(url_for("login_page"))
 
 
 @app.route("/api/bookings/status", methods=["POST"])
