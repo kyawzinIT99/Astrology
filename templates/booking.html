@@ -415,7 +415,11 @@
                 </div>
                 <div class="form-group">
                     <label>မွေးသက္ကရာဇ် (Date of Birth) *</label>
-                    <input type="date" id="bookDob" required onclick="this.showPicker()">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 8px;">
+                        <input type="number" id="bookDobDay" placeholder="ရက် (DD)" min="1" max="31" required>
+                        <input type="number" id="bookDobMonth" placeholder="လ (MM)" min="1" max="12" required>
+                        <input type="number" id="bookDobYear" placeholder="နှစ် (YYYY)" min="1900" max="2100" required>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>ရက်စွဲ ရွေးချယ်ပါ *</label>
@@ -543,10 +547,15 @@
             btn.disabled = true;
             btn.textContent = '⏳ စောင့်ပါ...';
 
+            const dobDay = String(document.getElementById('bookDobDay').value).padStart(2, '0');
+            const dobMonth = String(document.getElementById('bookDobMonth').value).padStart(2, '0');
+            const dobYear = document.getElementById('bookDobYear').value;
+            const dobFull = `${dobYear}-${dobMonth}-${dobDay}`;
+
             const data = {
                 name: document.getElementById('bookName').value,
                 phone: document.getElementById('bookPhone').value,
-                dob: document.getElementById('bookDob').value,
+                dob: dobFull,
                 date: document.getElementById('bookDate').value,
                 time: selectedTime,
                 topic: document.getElementById('bookTopic').value,
