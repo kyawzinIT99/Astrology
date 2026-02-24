@@ -19,7 +19,7 @@ SCOPES = [
 CREDENTIALS_FILE = os.path.join(os.path.dirname(__file__), "credentials.json")
 
 # Sheet headers — only essential booking info
-HEADERS = ["booking_id", "name", "phone", "date", "time", "status"]
+HEADERS = ["booking_id", "name", "phone", "dob", "date", "time", "status"]
 
 
 def get_client():
@@ -39,7 +39,7 @@ def get_sheet():
         except gspread.WorksheetNotFound:
             worksheet = spreadsheet.add_worksheet("Bookings", rows=200, cols=len(HEADERS))
             worksheet.update("A1", [HEADERS])
-            worksheet.format("A1:F1", {
+            worksheet.format("A1:G1", {
                 "textFormat": {"bold": True},
                 "backgroundColor": {"red": 0.35, "green": 0.11, "blue": 0.53}
             })
@@ -82,8 +82,8 @@ def sync_status_update(booking: dict, new_status: str) -> bool:
         booking_id = booking.get("booking_id", "")
         cell = worksheet.find(booking_id)
         if cell:
-            # Status is column F (index 6)
-            worksheet.update_cell(cell.row, 6, new_status)
+            # Status is column G (index 7)
+            worksheet.update_cell(cell.row, 7, new_status)
             print(f"✅ Booking {booking_id} status → {new_status} in Google Sheets")
             return True
         else:
@@ -109,7 +109,7 @@ def sync_all_bookings(bookings: list) -> bool:
 
         rows = [[b.get(h, "") for h in HEADERS] for b in bookings]
         if rows:
-            worksheet.update(f"A2:F{len(rows)+1}", rows)
+            worksheet.update(f"A2:G{len(rows)+1}", rows)
 
         print(f"✅ {len(rows)} bookings synced to Google Sheets")
         return True

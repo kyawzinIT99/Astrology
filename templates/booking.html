@@ -414,6 +414,10 @@
                         ဖြင့် အတည်ပြုနိုင်ခြင်း မရှိပါက ရက်ချိန်း ပျက်ပြယ်ပါမည်။</small>
                 </div>
                 <div class="form-group">
+                    <label>မွေးသက္ကရာဇ် (Date of Birth) *</label>
+                    <input type="date" id="bookDob" required onclick="this.showPicker()">
+                </div>
+                <div class="form-group">
                     <label>ရက်စွဲ ရွေးချယ်ပါ *</label>
                     <input type="date" id="bookDate" required onclick="this.showPicker()">
                 </div>
@@ -542,6 +546,7 @@
             const data = {
                 name: document.getElementById('bookName').value,
                 phone: document.getElementById('bookPhone').value,
+                dob: document.getElementById('bookDob').value,
                 date: document.getElementById('bookDate').value,
                 time: selectedTime,
                 topic: document.getElementById('bookTopic').value,

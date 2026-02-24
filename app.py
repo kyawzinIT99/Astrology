@@ -338,7 +338,7 @@ def create_booking():
     data = request.get_json()
 
     # Validate required fields
-    required = ["name", "phone", "date", "time"]
+    required = ["name", "phone", "dob", "date", "time"]
     for field in required:
         if not data.get(field):
             return jsonify({"error": f"{field} is required"}), 400
@@ -354,6 +354,7 @@ def create_booking():
         "booking_id": booking_id,
         "name": data["name"],
         "phone": data["phone"],
+        "dob": data["dob"],
         "date": data["date"],
         "time": data["time"],
         "topic": data.get("topic", "general"),
