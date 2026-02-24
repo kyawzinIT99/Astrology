@@ -392,7 +392,7 @@ PROMO_MSG = (
     "• သင့်ဘဝ အခြေအနေ တိတိပပ ဖတ်ခြင်း\n"
     "• အချစ်ရေး၊ အလုပ်၊ ငွေကြေး → တိကျသော အဖြေများ\n"
     "• ရှောင်ရန်/လုပ်ရန် အသေးစိတ် လမ်းညွှန်ချက်\n"
-    "• Su Mon Myint Oo နှင့် တိုက်ရိုက် ဆွေးနွေး (၃၅ မိနစ်)\n\n"
+    "• Dr.Tarot နှင့် တိုက်ရိုက် ဆွေးနွေး (၃၅ မိနစ်)\n\n"
     "💰 **အထူးစျေးနှုန်း: ၃၀,၀၀၀ ကျပ် (KPay ဖြင့် ပေးချေနိုင်ပါသည်)** 💰\n\n"
     "🎯 မဟာဘုတ်က ကံကြမ္မာ လမ်းကြောင်းကို ပြပါတယ်...\n"
     "🃏 Tarot က **ဘယ်လို ရွေးချယ်ရမလဲ** ကို ပြပါတယ်!\n\n"
@@ -451,8 +451,13 @@ def process_message(sess: dict, user_msg: str) -> str:
         return compute_reading(sess)
 
     elif state == "reading_shown":
-        # Any subsequent message can just reiterate the promo or answer general questions
+        # Check if user wants the 6-month forecast
         msg_lower = user_msg.lower()
+        if any(kw in user_msg for kw in ["ဟုတ်", "ဟော", "ကဲ", "yes", "forecast", "ok"]):
+            sess["state"] = "forecast_shown"
+            return engine.format_forecast(sess["reading"]) + PROMO_MSG
+            
+        # Any subsequent message can just reiterate the promo or answer general questions
         if any(kw in user_msg for kw in ["ကျေးဇူး", "thank", "ကောင်း"]):
             return (
                 "ရပါတယ်ရှင်၊ အချိန်မရွေး ထပ်မံ မေးမြန်းနိုင်ပါတယ်။\n\n"
@@ -464,12 +469,19 @@ def process_message(sess: dict, user_msg: str) -> str:
                 "အခြား မေးခွန်း ရှိပါက မေးမြန်းနိုင်ပါတယ်။ 🙏"
             )
 
+    elif state == "forecast_shown":
+        return (
+            "၆ လ ဟောစာတမ်းကို ပြသပေးခဲ့ပြီး ဖြစ်ပါတယ်။\n\n"
+            "ပိုမိုတိကျသော Tarot မေးခွန်းများ မေးမြန်းရန် ရက်ချိန်း ယူနိုင်ပါသည်:\n"
+            "👉 **[Tarot ရက်ချိန်း ယူရန် နှိပ်ပါ](/booking)** 🙏"
+        )
+
     # Handle booking keyword in any state
     if any(kw in user_msg for kw in ["ရက်ချိန်း", "appointment", "book"]):
         return (
             "📅 **Tarot ရက်ချိန်း** ယူရန် အောက်ပါ link ကို နှိပ်ပါ:\n\n"
             "👉 [ရက်ချိန်း ယူရန်](/booking)\n\n"
-            "Su Mon Myint Oo နှင့် ဗေဒင် တိုက်ရိုက် ဆွေးနွေးနိုင်ပါမည်။ 🔮"
+            "Dr.Tarot နှင့် ဗေဒင် တိုက်ရိုက် ဆွေးနွေးနိုင်ပါမည်။ 🔮"
         )
 
     return "🙏 ကျေးဇူးပြု၍ ထပ်မံ စတင်ရန် စာမျက်နှာကို refresh လုပ်ပါ။"

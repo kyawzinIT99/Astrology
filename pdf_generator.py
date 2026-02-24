@@ -77,9 +77,9 @@ class AstrologyPDF(FPDF):
         self._set_font_safe("B", 18)
         self.set_y(8)
         if self._has_myanmar_font:
-            self.cell(0, 12, "Su Mon Myint Oo မဟာဘုတ် ဗေဒင်(Tarot)", align="C", new_x="LMARGIN", new_y="NEXT")
+            self.cell(0, 12, "Dr.Tarot မဟာဘုတ် ဗေဒင် & Tarot", align="C", new_x="LMARGIN", new_y="NEXT")
         else:
-            self.cell(0, 12, "Su Mon Myint Oo Mahabote Astrology (Tarot)", align="C", new_x="LMARGIN", new_y="NEXT")
+            self.cell(0, 12, "Dr.Tarot Mahabote Astrology & Tarot", align="C", new_x="LMARGIN", new_y="NEXT")
 
         self.set_text_color(0, 0, 0)
         self.ln(15)
@@ -175,19 +175,17 @@ class AstrologyPDF(FPDF):
         self.add_info_row(
             "မူလ မဟာဘုတ်အိမ်:", "Birth House:",
             f"{house['name_mm']} ({house['name_en']})",
-            f"{house['name_en']} ({house['planet_en']})"
+            f"{house['name_en']}"
         )
-        self.add_info_row(
-            "အိမ်ရှင်ဂြိုဟ်:", "Ruling Planet:",
-            f"{house['planet_mm']} ({house['planet_en']})",
-            f"{house['planet_en']}"
-        )
-        nature_mm = "ကောင်းသောအိမ်" if house['nature'] == 'asset' else "စိန်ခေါ်သောအိမ်"
+        # Check nature from the string now
+        nature_mm = "ကောင်းသောနှစ်/အိမ်" if "asset" in str(house['nature']).lower() or "nobility" in str(house['nature']).lower() or "treasure" in str(house['nature']).lower() or "supreme" in str(house['nature']).lower() or "brilliance" in str(house['nature']).lower() else "စိန်ခေါ်သောနှစ်/အိမ်"
+        # Since I changed nature to descriptive strings, let's just show it
         self.add_info_row(
             "သဘာဝ:", "Nature:",
-            nature_mm, house['nature'].title()
+            nature_mm, str(house['nature'])
         )
-        self.add_info_row("ကြွင်းကိန်း:", "Remainder:", str(reading.house_remainder), str(reading.house_remainder))
+        self.add_info_row("မြန်မာသက္ကရာဇ် ကြွင်း:", "Year Remainder:", str(reading.year_remainder), str(reading.year_remainder))
+        self.add_info_row("အိမ်ညွှန်းကိန်း:", "House Index:", str(reading.house_remainder), str(reading.house_remainder))
         self.ln(3)
 
         # Personality
@@ -222,12 +220,13 @@ class AstrologyPDF(FPDF):
         self.add_info_row(
             "သက်ရောက်အိမ်:", "Current House:",
             f"{curr_house['name_mm']} ({curr_house['name_en']})",
-            f"{curr_house['name_en']} ({curr_house['planet_en']})"
+            f"{curr_house['name_en']}"
         )
-        curr_nature_mm = "ကောင်းသောနှစ်" if curr_house['nature'] == 'asset' else "စိန်ခေါ်သောနှစ်"
+        # Use nature mapping
+        curr_nature_mm = "ကောင်းသောနှစ်" if "asset" in str(curr_house['nature']).lower() or "nobility" in str(curr_house['nature']).lower() or "treasure" in str(curr_house['nature']).lower() or "supreme" in str(curr_house['nature']).lower() or "brilliance" in str(curr_house['nature']).lower() else "စိန်ခေါ်သောနှစ်"
         self.add_info_row(
             "နှစ်၏ သဘာဝ:", "Nature of Year:",
-            curr_nature_mm, curr_house['nature'].title()
+            curr_nature_mm, str(curr_house['nature'])
         )
         self.ln(3)
         self.add_paragraph(curr_house['personality_mm'], curr_house['personality_en'])
