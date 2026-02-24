@@ -385,8 +385,10 @@
                 <button class="filter-btn" onclick="filterBookings('confirmed', this)">အတည်ပြုပြီး</button>
                 <button class="filter-btn" onclick="filterBookings('rejected', this)">ပယ်ချပြီး</button>
             </div>
-            <div style="display:flex; gap: 8px;">
-                <span style="color: var(--text-muted); font-size: 11px; padding: 5px 0;">n8n ↔ Sheets + SMS</span>
+            <div style="display:flex; gap: 8px; align-items: center;">
+                <button class="btn btn-sheets" onclick="forceSyncSheets()" id="btnForceSync"
+                    style="padding: 4px 10px; font-size: 11px;">🔄 Sync Sheets</button>
+                <span style="color: var(--text-muted); font-size: 11px;">Sheets + SMS</span>
             </div>
         </div>
 
@@ -654,6 +656,27 @@
             } finally {
                 btn.disabled = false;
                 btn.textContent = 'PDF ထုတ်မည်';
+            }
+        }
+
+        async function forceSyncSheets() {
+            if (!confirm("Google Sheets ပေါ်ရှိ အချက်အလက်များကို အသစ်ပြန်လည်ရေးသွင်းမည်။ သေချာပါသလား?")) return;
+            const btn = document.getElementById('btnForceSync');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Syncing...';
+            try {
+                const res = await fetch('/api/admin/sync_sheets', { method: 'POST' });
+                const json = await res.json();
+                if (res.ok) {
+                    alert(json.message);
+                } else {
+                    alert("Error: " + json.error);
+                }
+            } catch (e) {
+                alert("Connection failed");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🔄 Sync Sheets';
             }
         }
 

@@ -277,6 +277,21 @@ def serve_admin_pdf(filename):
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
 
+@app.route("/api/admin/sync_sheets", methods=["POST"])
+def force_sync_sheets():
+    """Force sync all bookings to Google Sheets to update headers and catch up missed data."""
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    from sheets_sync import sync_all_bookings
+    bookings = load_bookings()
+    success = sync_all_bookings(bookings)
+    
+    if success:
+        return jsonify({"message": "✅ Google Sheets resynced with latest columns!"})
+    else:
+        return jsonify({"error": "Failed to sync to Google Sheets."}), 500
+
 @app.route("/api/bookings/status", methods=["POST"])
 def update_booking_status():
     """Update a booking's status (confirm/reject) and sync to Sheets."""
